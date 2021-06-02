@@ -100,7 +100,8 @@ function M.update()
   local infoview_bufnr
   local infoview = M._infoviews[src_idx]
   if not infoview then
-    M._infoviews[src_idx] = {}
+    infoview = {}
+    M._infoviews[src_idx] = infoview
 
     infoview_bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_name(infoview_bufnr, _INFOVIEW_BUF_NAME .. infoview_bufnr)
@@ -128,6 +129,9 @@ function M.update()
     -- It makes sure that the infoview is erased from the table when this happens.
     set_autocmds_guard("LeanInfoViewWindow", string.format([[
       autocmd WinClosed <buffer> lua require'lean.infoview'.close_win_wrapper(%s, %s, false, true)
+
+      autocmd CursorMoved <buffer> lua require'lean.infoview'.highlight()
+      autocmd BufLeave <buffer> lua require'lean.infoview'.clear_highlight()
     ]], current_window, current_tab), 0)
     vim.api.nvim_set_current_win(current_window)
 
@@ -178,6 +182,7 @@ function M.update()
         vim.list_extend(lines, vim.split(diag.message, '\n', true))
       end
 
+      infoview.lean_bufnr = current_buffer
       set_lines(lines)
     end
     return vim.lsp.buf_request(0, "$/lean/plainGoal", goal_params, function(_, _, goal)
@@ -197,6 +202,56 @@ function M.update()
     vim.api.nvim_buf_call(infoview_bufnr, vim.fn.winline)
     vim.api.nvim_buf_set_option(infoview_bufnr, 'modifiable', false)
   end)
+end
+
+local function get_infoview_with_bufnr(info_bufnr)
+  if not info_bufnr then
+    info_bufnr = vim.api.nvim_get_current_buf()
+  end
+  for _, infoview in pairs(M._infoviews) do
+    if infoview.buf == info_bufnr then
+      return infoview
+    end
+  end
+  return nil
+end
+
+local highlight_ns = vim.api.nvim_create_namespace('leaninfohl')
+
+function M.highlight()
+  M.clear_highlight()
+  local infoview = get_infoview_with_bufnr()
+  if not infoview or not infoview.lean_bufnr then return end
+
+  local line = vim.api.nvim_get_current_line()
+  local line1, col1, line2, col2 = line:match('▶.*%((%d+):(%d+)-(%d+):(%d+)%)')
+  if not line1 then return end
+  local convert_pos = function(l, c)
+    c = vim.lsp.util._get_line_byte_from_position(infoview.lean_bufnr,
+      { line = l - 1, character = c - 1 })
+    return l - 1, c
+  end
+  line1, col1 = convert_pos(line1, col1)
+  line2, col2 = convert_pos(line2, col2)
+
+  local hl = function(l, c1, c2)
+    vim.api.nvim_buf_add_highlight(infoview.lean_bufnr, highlight_ns, 'leanInfoHighlight', l, c1, c2)
+  end
+  if line1 == line2 then
+    hl(line1, col1, col2)
+  else
+    hl(line1, col1, -1)
+    for l = line1 + 1, line2 - 1 do
+      hl(l, 0, -1)
+    end
+    hl(line2, 0, col2)
+  end
+end
+
+function M.clear_highlight()
+  local infoview = get_infoview_with_bufnr()
+  if not infoview or not infoview.lean_bufnr then return end
+  vim.api.nvim_buf_clear_namespace(infoview.lean_bufnr, highlight_ns, 0, -1)
 end
 
 function M.enable(opts)

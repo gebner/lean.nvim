@@ -18,3 +18,5 @@ hi def link leanInfoExpectedType Special
 hi def link leanInfoError LspDiagnosticsDefaultError
 hi def link leanInfoWarning LspDiagnosticsDefaultWarning
 hi def link leanInfoInfo LspDiagnosticsDefaultInformation
+
+hi def link leanInfoHighlight Visual
