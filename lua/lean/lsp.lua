@@ -1,7 +1,9 @@
 local M = { handlers = {} }
 
 function M.enable3(opts)
+  if require'lspconfig'.lean3ls then -- remove once nvim-lspconfig PR is merged
   require('lspconfig').lean3ls.setup(opts)
+  end
 end
 
 function M.enable(opts)
