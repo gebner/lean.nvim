@@ -124,6 +124,47 @@ components.diagnostics()                            *components.diagnostics()*
 ================================================================================
 
 ================================================================================
+LspPosition                                                      *LspPosition*
+
+
+    Fields: ~
+        {line}      (integer)
+        {character} (integer)
+
+
+LspRange                                                            *LspRange*
+
+
+    Fields: ~
+        {start} (LspPosition)
+        {end}   (LspPosition)
+
+
+LeanFileProgressProcessingInfo                *LeanFileProgressProcessingInfo*
+
+
+    Fields: ~
+        {range} (LspRange)
+
+
+VersionedTextDocumentIdentifier              *VersionedTextDocumentIdentifier*
+
+
+    Fields: ~
+        {uri}     (string)
+        {version} (integer)
+
+
+LeanFileProgressParams                                *LeanFileProgressParams*
+
+
+    Fields: ~
+        {textDocument} (VersionedTextDocumentIdentifier)
+        {processing}   (LeanFileProgressProcessingInfo[])
+
+
+
+================================================================================
 sorry.fill()                                                    *sorry.fill()*
     Fill the current cursor position with `sorry`s to discharge all goals.
 
